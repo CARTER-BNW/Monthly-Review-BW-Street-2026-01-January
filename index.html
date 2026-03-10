@@ -20,14 +20,14 @@ flex-direction:column;
 align-items:center;
 }
 
-/* Bigger logo */
+/* logo */
 
 #logo{
 height:180px;
 margin-top:20px;
 }
 
-/* Bigger title */
+/* title */
 
 #title{
 font-size:42px;
@@ -35,13 +35,15 @@ margin:10px 0 25px 0;
 text-align:center;
 }
 
-/* Wider flipbook */
+/* flipbook */
 
 #flipbook{
 width:96vw;
 max-width:1400px;
 background:#222;
 }
+
+/* page */
 
 #flipbook .page{
 background:#222;
@@ -51,14 +53,16 @@ align-items:center;
 justify-content:center;
 }
 
+/* images */
+
 #flipbook img{
-width:auto;
-height:100%;
-max-width:100%;
+width:100%;
+height:auto;
 display:block;
 cursor:pointer;
 }
-/* Bigger controls */
+
+/* controls */
 
 #controls{
 display:flex;
@@ -80,7 +84,7 @@ font-size:30px;
 border-radius:6px;
 }
 
-/* Larger timeline */
+/* timeline */
 
 #timeline{
 display:flex;
@@ -103,7 +107,7 @@ border:3px solid transparent;
 border-color:#fff;
 }
 
-/* fullscreen adjustments */
+/* fullscreen */
 
 :fullscreen #flipbook{
 width:100vw;
@@ -112,9 +116,10 @@ max-width:none;
 
 </style>
 </head>
+
 <body>
 
-<img id="logo" src="logo.png" alt="Logo">
+<img id="logo" src="logo.png">
 
 <div id="title">
 JAN 2026 – Black & White Street - Monthly Review
@@ -139,6 +144,8 @@ const totalImages = 49
 const flipbook = $('#flipbook')
 const timeline = $('#timeline')
 
+/* build pages */
+
 for(let i=1;i<=totalImages;i++){
 
 let num = i.toString().padStart(4,'0')
@@ -151,9 +158,11 @@ timeline.append(thumb)
 
 }
 
+/* flipbook init */
+
 flipbook.turn({
 width:flipbook.width(),
-height:flipbook.width()*(1440/1200),
+height:600,
 autoCenter:true,
 display:'single',
 acceleration:true,
@@ -161,29 +170,39 @@ gradients:true,
 elevation:50
 })
 
+/* dynamic resize based on actual image */
+
 function resizeFlipbook(){
 
 let fullscreen = !!document.fullscreenElement
 
 let width = fullscreen ? window.innerWidth : flipbook.width()
 
-let maxHeight = fullscreen ? window.innerHeight : $(window).height()
+let page = flipbook.turn('page')
 
-let aspect = 1200/1440
+let img = $('#flipbook img').eq(page-1)[0]
 
-let pageHeight = Math.min(maxHeight,width*aspect)
+if(!img || !img.naturalWidth) return
 
-flipbook.turn('size',width,pageHeight)
+let aspect = img.naturalHeight / img.naturalWidth
 
-flipbook.find('.page').css('height',pageHeight+'px')
+let pageHeight = width * aspect
+
+flipbook.turn('size', width, pageHeight)
+
+flipbook.find('.page').css({
+height: pageHeight+'px'
+})
 
 }
 
-resizeFlipbook()
+$(window).on('load',resizeFlipbook)
 
 $(window).resize(resizeFlipbook)
 
 document.addEventListener("fullscreenchange",resizeFlipbook)
+
+/* controls */
 
 $('#next').click(()=>flipbook.turn('next'))
 $('#prev').click(()=>flipbook.turn('previous'))
@@ -194,6 +213,8 @@ if(e.keyCode===37) flipbook.turn('previous')
 if(e.keyCode===39) flipbook.turn('next')
 
 })
+
+/* touch swipe */
 
 let startX=null
 
@@ -231,6 +252,8 @@ startX=null
 
 })
 
+/* timeline click */
+
 $('#timeline img').click(function(){
 
 let pageNum=$(this).data('page')
@@ -239,16 +262,20 @@ flipbook.turn('page',pageNum)
 
 })
 
+/* page change */
+
 flipbook.bind('turned',function(e,page){
 
 $('#timeline img').removeClass('active')
 $('#timeline img').eq(page-1).addClass('active')
 
+resizeFlipbook()
+
 })
 
 flipbook.turn('page',1)
 
-/* FULLSCREEN VIEWER */
+/* fullscreen */
 
 $('#flipbook').on('click','img',function(){
 
