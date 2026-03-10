@@ -32,7 +32,7 @@ body {
 
 #flipbook {
   width: 90vw;
-  max-width: 1200px;
+  max-width: 900px;
   background: #000;
 }
 
@@ -46,6 +46,7 @@ body {
   height: 100%;
   object-fit: contain;
   display: block;
+  cursor: pointer;
 }
 
 #controls {
@@ -105,43 +106,29 @@ body {
 <div id="timeline"></div>
 
 <script>
-$(document).ready(function() {
+$(document).ready(function(){
 
 const totalImages = 49;
 const flipbook = $('#flipbook');
 const timeline = $('#timeline');
 
-const isMobile = window.innerWidth < 768;
-const displayMode = isMobile ? 'single' : 'double';
-
-if(!isMobile){
-  flipbook.append('<div class="page"></div>');
-}
-
-for(let i = 1; i <= totalImages; i++){
+for(let i=1;i<=totalImages;i++){
 
   const num = i.toString().padStart(4,'0');
 
   const page = $('<div class="page"><img src="jan26-'+num+'.jpg"></div>');
   flipbook.append(page);
 
-  const thumb = $('<img src="jan26-'+num+'.jpg" data-page="'+(isMobile ? i : i+1)+'">');
+  const thumb = $('<img src="jan26-'+num+'.jpg" data-page="'+i+'">');
   timeline.append(thumb);
 
-}
-
-if(!isMobile){
-  const totalPages = totalImages + 1;
-  if(totalPages % 2 === 1){
-    flipbook.append('<div class="page"></div>');
-  }
 }
 
 flipbook.turn({
   width: flipbook.width(),
   height: flipbook.width() * (1440/1200),
   autoCenter: true,
-  display: displayMode,
+  display: 'single',
   acceleration: true,
   gradients: true,
   elevation: 50
@@ -149,23 +136,14 @@ flipbook.turn({
 
 function resizeFlipbook(){
 
-  const maxHeight = $(window).height() * 0.8;
-
-  const pageWidth = displayMode === 'single'
-    ? flipbook.width()
-    : flipbook.width()/2;
-
+  const maxHeight = $(window).height()*0.8;
+  const pageWidth = flipbook.width();
   const aspect = 1440/1200;
 
-  const pageHeight = Math.min(maxHeight, pageWidth * aspect);
+  const pageHeight = Math.min(maxHeight,pageWidth*aspect);
 
-  flipbook.turn(
-    'size',
-    displayMode === 'single' ? pageWidth : pageWidth*2,
-    pageHeight
-  );
-
-  flipbook.find('.page').css('height', pageHeight + 'px');
+  flipbook.turn('size',pageWidth,pageHeight);
+  flipbook.find('.page').css('height',pageHeight+'px');
 
 }
 
@@ -176,61 +154,80 @@ $('#next').click(()=>flipbook.turn('next'));
 $('#prev').click(()=>flipbook.turn('previous'));
 
 $(document).keydown(function(e){
-  if(e.keyCode === 37) flipbook.turn('previous');
-  if(e.keyCode === 39) flipbook.turn('next');
+  if(e.keyCode===37) flipbook.turn('previous');
+  if(e.keyCode===39) flipbook.turn('next');
 });
 
-let startX = null;
+let startX=null;
 
 flipbook.on('touchstart',function(e){
-  startX = e.originalEvent.touches[0].clientX;
+  startX=e.originalEvent.touches[0].clientX;
 });
 
 flipbook.on('touchmove',function(e){
 
   if(!startX) return;
 
-  let diff = e.originalEvent.touches[0].clientX - startX;
+  let diff=e.originalEvent.touches[0].clientX-startX;
 
-  if(diff > 50){
+  if(diff>50){
     flipbook.turn('previous');
-    startX = null;
+    startX=null;
   }
 
-  if(diff < -50){
+  if(diff<-50){
     flipbook.turn('next');
-    startX = null;
+    startX=null;
   }
 
 });
 
 flipbook.on('touchend',function(){
-  startX = null;
+  startX=null;
 });
 
 $('#timeline img').click(function(){
 
-  const pageNum = $(this).data('page');
-
-  flipbook.turn('page', pageNum);
+  const pageNum=$(this).data('page');
+  flipbook.turn('page',pageNum);
 
 });
 
 flipbook.bind('turned',function(e,page){
 
   $('#timeline img').removeClass('active');
-
-  const index = isMobile ? page-1 : page-2;
-
-  $('#timeline img').eq(index).addClass('active');
+  $('#timeline img').eq(page-1).addClass('active');
 
 });
 
-if(isMobile){
-  flipbook.turn('page',1);
-}else{
-  flipbook.turn('page',2);
-}
+flipbook.turn('page',1);
+
+
+/* FULLSCREEN IMAGE */
+
+$('#flipbook').on('click','img',function(){
+
+  const el = this;
+
+  if(!document.fullscreenElement){
+
+    if(el.requestFullscreen){
+      el.requestFullscreen();
+    } else if(el.webkitRequestFullscreen){
+      el.webkitRequestFullscreen();
+    } else if(el.msRequestFullscreen){
+      el.msRequestFullscreen();
+    }
+
+  } else {
+
+    if(document.exitFullscreen){
+      document.exitFullscreen();
+    }
+
+  }
+
+});
 
 });
 </script>
