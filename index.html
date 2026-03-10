@@ -4,16 +4,13 @@
 <meta charset="UTF-8">
 <title>JAN 2026 BNW Street Review – Flipbook</title>
 
-<!-- jQuery (Turn.js dependency) -->
 <script src="extras/jquery.min.1.7.js"></script>
 <script src="extras/jquery.mousewheel.min.js"></script>
-
-<!-- Turn.js -->
 <script src="lib/turn.min.js"></script>
 
 <style>
 body {
-  background: #222; /* dark gray around pages */
+  background: #222;
   margin: 0;
   font-family: sans-serif;
   color: white;
@@ -22,29 +19,26 @@ body {
   align-items: center;
 }
 
-/* Logo and title */
 #logo {
   height: 120px;
   margin-top: 10px;
 }
+
 #title {
   font-size: 28px;
   margin: 5px 0 20px 0;
   text-align: center;
 }
 
-/* Flipbook container */
 #flipbook {
   width: 90vw;
   max-width: 1200px;
-  background: #000; /* black background */
+  background: #000;
 }
 
-/* Individual pages */
 #flipbook .page {
-  background: #000; /* black page background */
+  background: #000;
   box-shadow: 0 0 20px rgba(0,0,0,0.5);
-  margin: 0;
 }
 
 #flipbook img {
@@ -54,7 +48,6 @@ body {
   display: block;
 }
 
-/* Controls */
 #controls {
   display: flex;
   justify-content: center;
@@ -62,6 +55,7 @@ body {
   gap: 20px;
   margin: 15px 0;
 }
+
 #controls a, #controls button {
   color: white;
   text-decoration: none;
@@ -72,7 +66,6 @@ body {
   font-size: 16px;
 }
 
-/* Timeline thumbnails */
 #timeline {
   display: flex;
   justify-content: center;
@@ -81,6 +74,7 @@ body {
   gap: 5px;
   max-width: 90vw;
 }
+
 #timeline img {
   width: 60px;
   height: 90px;
@@ -88,6 +82,7 @@ body {
   cursor: pointer;
   border: 2px solid transparent;
 }
+
 #timeline img.active {
   border-color: #fff;
 }
@@ -101,105 +96,142 @@ body {
 <div id="flipbook"></div>
 
 <div id="controls">
-  <a href="https://www.instagram.com/carter.bnw/" target="_blank">Instagram</a>
-  <button id="prev">Prev</button>
-  <button id="next">Next</button>
-  <a href="https://www.paypal.com/donate/?hosted_button_id=MJLDZJNTTNYCA" target="_blank">Donate / Support</a>
+<a href="https://www.instagram.com/carter.bnw/" target="_blank">Instagram</a>
+<button id="prev">Prev</button>
+<button id="next">Next</button>
+<a href="https://www.paypal.com/donate/?hosted_button_id=MJLDZJNTTNYCA" target="_blank">Donate / Support</a>
 </div>
 
 <div id="timeline"></div>
 
 <script>
 $(document).ready(function() {
-  const totalImages = 49;
-  const flipbook = $('#flipbook');
-  const timeline = $('#timeline');
 
-  // Prepend a blank first page for proper left-hand first page
+const totalImages = 49;
+const flipbook = $('#flipbook');
+const timeline = $('#timeline');
+
+const isMobile = window.innerWidth < 768;
+const displayMode = isMobile ? 'single' : 'double';
+
+if(!isMobile){
   flipbook.append('<div class="page"></div>');
+}
 
-  // Inject pages and timeline thumbnails
-  for(let i = 1; i <= totalImages; i++){
-    const num = i.toString().padStart(4,'0');
-    const page = $(`<div class="page"><img src="jan26-${num}.jpg" alt="Page ${i}"></div>`);
-    flipbook.append(page);
+for(let i = 1; i <= totalImages; i++){
 
-    const thumb = $(`<img src="jan26-${num}.jpg" data-page="${i+1}">`); // +1 due to blank page
-    timeline.append(thumb);
+  const num = i.toString().padStart(4,'0');
+
+  const page = $('<div class="page"><img src="jan26-'+num+'.jpg"></div>');
+  flipbook.append(page);
+
+  const thumb = $('<img src="jan26-'+num+'.jpg" data-page="'+(isMobile ? i : i+1)+'">');
+  timeline.append(thumb);
+
+}
+
+if(!isMobile){
+  const totalPages = totalImages + 1;
+  if(totalPages % 2 === 1){
+    flipbook.append('<div class="page"></div>');
+  }
+}
+
+flipbook.turn({
+  width: flipbook.width(),
+  height: flipbook.width() * (1440/1200),
+  autoCenter: true,
+  display: displayMode,
+  acceleration: true,
+  gradients: true,
+  elevation: 50
+});
+
+function resizeFlipbook(){
+
+  const maxHeight = $(window).height() * 0.8;
+
+  const pageWidth = displayMode === 'single'
+    ? flipbook.width()
+    : flipbook.width()/2;
+
+  const aspect = 1440/1200;
+
+  const pageHeight = Math.min(maxHeight, pageWidth * aspect);
+
+  flipbook.turn(
+    'size',
+    displayMode === 'single' ? pageWidth : pageWidth*2,
+    pageHeight
+  );
+
+  flipbook.find('.page').css('height', pageHeight + 'px');
+
+}
+
+resizeFlipbook();
+$(window).resize(resizeFlipbook);
+
+$('#next').click(()=>flipbook.turn('next'));
+$('#prev').click(()=>flipbook.turn('previous'));
+
+$(document).keydown(function(e){
+  if(e.keyCode === 37) flipbook.turn('previous');
+  if(e.keyCode === 39) flipbook.turn('next');
+});
+
+let startX = null;
+
+flipbook.on('touchstart',function(e){
+  startX = e.originalEvent.touches[0].clientX;
+});
+
+flipbook.on('touchmove',function(e){
+
+  if(!startX) return;
+
+  let diff = e.originalEvent.touches[0].clientX - startX;
+
+  if(diff > 50){
+    flipbook.turn('previous');
+    startX = null;
   }
 
-  // Append blank last page if needed to make total pages even
-  const totalPages = totalImages + 1; // +1 for prepended blank
-  if (totalPages % 2 === 1) {
-    flipbook.append('<div class="page"></div>'); // ensures last page displays
+  if(diff < -50){
+    flipbook.turn('next');
+    startX = null;
   }
 
-  // Initialize Turn.js
-  flipbook.turn({
-    width: flipbook.width(),
-    height: flipbook.width() * (1440/1200),
-    autoCenter: true,
-    display: 'double',
-    direction: 'ltr',
-    acceleration: true,
-    gradients: true,
-    elevation: 50
-  });
+});
 
-  // Resize function
-  function resizeFlipbook() {
-    const maxHeight = $(window).height() * 0.8;
-    const pageWidth = flipbook.width() / 2;
-    const aspect = 1440 / 1200;
-    const pageHeight = Math.min(maxHeight, pageWidth * aspect);
-    flipbook.turn('size', pageWidth * 2, pageHeight);
-    flipbook.find('.page').css('height', pageHeight + 'px');
-  }
-  resizeFlipbook();
-  $(window).resize(resizeFlipbook);
+flipbook.on('touchend',function(){
+  startX = null;
+});
 
-  // Controls
-  $('#next').click(()=>flipbook.turn('next'));
-  $('#prev').click(()=>flipbook.turn('previous'));
-  $(document).keydown(function(e){
-    if(e.keyCode === 37) flipbook.turn('previous');
-    if(e.keyCode === 39) flipbook.turn('next');
-  });
+$('#timeline img').click(function(){
 
-  // Swipe support
-  let startX = null;
-  flipbook.on('touchstart', function(e){ startX = e.originalEvent.touches[0].clientX; });
-  flipbook.on('touchmove', function(e){
-    if(!startX) return;
-    let diff = e.originalEvent.touches[0].clientX - startX;
-    if(diff > 50) { flipbook.turn('previous'); startX = null; }
-    if(diff < -50) { flipbook.turn('next'); startX = null; }
-  });
-  flipbook.on('touchend', function(){ startX = null; });
+  const pageNum = $(this).data('page');
 
-  // Timeline click
-  $('#timeline img').click(function(){
-    const pageNum = $(this).data('page');
-    flipbook.turn('page', pageNum);
-  });
+  flipbook.turn('page', pageNum);
 
-  // Highlight current thumbnail + handle last page centering
-  flipbook.bind('turned', function(e, page) {
-    $('#timeline img').removeClass('active');
-    const currentThumbIndex = page - 2; // adjust for blank first page
-    $('#timeline img').eq(currentThumbIndex).addClass('active');
+});
 
-    // Center last page if alone
-    const pages = flipbook.turn('pages');
-    if(pages % 2 === 1 && page === pages) {
-      flipbook.find('.page').eq(page-1).css({float:'none', margin:'0 auto'});
-    } else {
-      flipbook.find('.page').css({float:'', margin:''});
-    }
-  });
+flipbook.bind('turned',function(e,page){
 
-  // Start on first spread (pages 1+2)
-  flipbook.turn('page', 2);
+  $('#timeline img').removeClass('active');
+
+  const index = isMobile ? page-1 : page-2;
+
+  $('#timeline img').eq(index).addClass('active');
+
+});
+
+if(isMobile){
+  flipbook.turn('page',1);
+}else{
+  flipbook.turn('page',2);
+}
+
 });
 </script>
 
