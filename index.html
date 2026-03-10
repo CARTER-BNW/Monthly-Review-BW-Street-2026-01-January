@@ -40,11 +40,11 @@ text-align:center;
 #flipbook{
 width:96vw;
 max-width:1400px;
-background:#000;
+background:#222;
 }
 
 #flipbook .page{
-background:#000;
+background:#222;
 box-shadow:0 0 20px rgba(0,0,0,0.5);
 display:flex;
 align-items:center;
@@ -167,7 +167,7 @@ let fullscreen = !!document.fullscreenElement
 
 let width = fullscreen ? window.innerWidth : flipbook.width()
 
-let maxHeight = fullscreen ? window.innerHeight : $(window).height()*0.8
+let maxHeight = fullscreen ? window.innerHeight : $(window).height()
 
 let aspect = 1200/1440
 
