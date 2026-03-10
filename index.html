@@ -51,10 +51,12 @@ body{
 
 /* images */
 #flipbook img{
-    width:auto;
-    height:100%;
+    width:100%;
+    height:auto;
+    max-height:100%;
     display:block;
     cursor:pointer;
+    object-fit:contain;
 }
 
 /* controls */
@@ -100,10 +102,16 @@ body{
     border-color:#fff;
 }
 
-/* fullscreen */
-:fullscreen #flipbook{
-    width:100vw;
-    max-width:none;
+/* fullscreen adjustments */
+:fullscreen #flipbook .page,
+:fullscreen #flipbook img{
+    width: auto;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 </style>
@@ -135,7 +143,7 @@ $(document).ready(function(){
     const flipbook = $('#flipbook');
     const timeline = $('#timeline');
 
-    /* Build pages and timeline */
+    // Build pages & timeline
     for(let i=1;i<=totalImages;i++){
         let num = i.toString().padStart(4,'0');
         let page = $('<div class="page"><img src="jan26-'+num+'.jpg"></div>');
@@ -144,49 +152,45 @@ $(document).ready(function(){
         timeline.append(thumb);
     }
 
-    /* Initialize flipbook */
+    // Initialize flipbook
     flipbook.turn({
-        width:flipbook.width(),
-        height:800,
-        autoCenter:true,
-        display:'single',
-        acceleration:true,
-        gradients:true,
-        elevation:50
+        width: flipbook.width(),
+        height: 800,
+        autoCenter: true,
+        display: 'single',
+        acceleration: true,
+        gradients: true,
+        elevation: 50
     });
 
-    /* Resize function to fit image width and height */
+    // Resize function
     function resizeFlipbook(){
         let fullscreen = !!document.fullscreenElement;
-        let width = fullscreen ? window.innerWidth : flipbook.width();
         let pageIndex = flipbook.turn('page')-1;
         let img = $('#flipbook img').eq(pageIndex)[0];
         if(!img || !img.naturalWidth) return;
-        let aspect = img.naturalHeight / img.naturalWidth;
-        let pageHeight = width * aspect;
 
-        flipbook.turn('size', width, pageHeight);
+        let pageWidth = fullscreen ? window.innerWidth : flipbook.width();
+        let pageHeight = fullscreen ? window.innerHeight : img.naturalHeight * (pageWidth / img.naturalWidth);
 
-        /* force page containers to same height and center image */
+        flipbook.turn('size', pageWidth, pageHeight);
+
         $('#flipbook .page').css({
-            height: pageHeight + 'px',
+            height: pageHeight+'px',
             display:'flex',
             alignItems:'center',
             justifyContent:'center'
         });
 
-        /* refresh Turn.js layout */
         flipbook.turn('resize');
     }
 
-    /* Call resize when images load */
+    // Call resize when images load
     $('#flipbook img').on('load', resizeFlipbook);
-
-    /* Window resize & fullscreen */
     $(window).resize(resizeFlipbook);
     document.addEventListener("fullscreenchange", function(){ setTimeout(resizeFlipbook,50); });
 
-    /* Controls */
+    // Controls
     $('#next').click(()=>flipbook.turn('next'));
     $('#prev').click(()=>flipbook.turn('previous'));
     $(document).keydown(function(e){
@@ -194,7 +198,7 @@ $(document).ready(function(){
         if(e.keyCode===39) flipbook.turn('next');
     });
 
-    /* Touch swipe */
+    // Touch swipe
     let startX=null;
     flipbook.on('touchstart',function(e){ startX=e.originalEvent.touches[0].clientX; });
     flipbook.on('touchmove',function(e){
@@ -205,13 +209,13 @@ $(document).ready(function(){
     });
     flipbook.on('touchend',function(){ startX=null; });
 
-    /* Timeline click */
+    // Timeline click
     $('#timeline img').click(function(){
         let pageNum=$(this).data('page');
         flipbook.turn('page',pageNum);
     });
 
-    /* Update timeline & resize on page turn */
+    // Update timeline & resize on page turn
     flipbook.bind('turned',function(e,page){
         $('#timeline img').removeClass('active');
         $('#timeline img').eq(page-1).addClass('active');
@@ -220,7 +224,7 @@ $(document).ready(function(){
 
     flipbook.turn('page',1);
 
-    /* Fullscreen toggle */
+    // Fullscreen toggle
     $('#flipbook').on('click','img',function(){
         let el=document.getElementById("flipbook");
         if(!document.fullscreenElement){
